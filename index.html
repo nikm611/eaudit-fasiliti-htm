@@ -284,47 +284,76 @@
                 }
             };
 
-            const handleImageUpload = (e, id, type) => {
-                const file = e.target.files[0];
-                if(!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 300; 
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > MAX_WIDTH) {
-                            height = Math.round((height * MAX_WIDTH) / width);
-                            width = MAX_WIDTH;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        const base64 = canvas.toDataURL('image/jpeg', 0.4); 
-                        
-                        if(type === 'semak') {
-                            setJawapanSemak(prev => ({...prev, [`${id}_gambar`]: base64}));
-                        } else {
-                            setJawapanKebakaran(prev => ({...prev, [`${id}_gambar`]: base64}));
-                        }
-                    }
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
+            // [NEW] Fungsi yang dirombak untuk proses berbilang gambar (multiple upload)
+            const handleImageUpload = async (e, id, type) => {
+                const files = Array.from(e.target.files);
+                if(files.length === 0) return;
+
+                const processFile = (file) => new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 300; 
+                            let width = img.width;
+                            let height = img.height;
+                            if (width > MAX_WIDTH) {
+                                height = Math.round((height * MAX_WIDTH) / width);
+                                width = MAX_WIDTH;
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            resolve(canvas.toDataURL('image/jpeg', 0.4)); 
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                const base64Array = await Promise.all(files.map(processFile));
+
+                if(type === 'semak') {
+                    setJawapanSemak(prev => ({
+                        ...prev, 
+                        [`${id}_gambar`]: [...(prev[`${id}_gambar`] || []), ...base64Array]
+                    }));
+                } else {
+                    setJawapanKebakaran(prev => ({
+                        ...prev, 
+                        [`${id}_gambar`]: [...(prev[`${id}_gambar`] || []), ...base64Array]
+                    }));
+                }
+                
+                e.target.value = null; // Reset input supaya boleh tambah gambar lain lagi
             };
 
-            const removeImage = (id, type) => {
+            // [NEW] Fungsi buang (remove) gambar satu persatu dari tatasusunan (array)
+            const removeImage = (id, type, index) => {
                 if(type === 'semak') {
-                    const newJawapan = {...jawapanSemak};
-                    delete newJawapan[`${id}_gambar`];
-                    setJawapanSemak(newJawapan);
+                    setJawapanSemak(prev => {
+                        const newArr = [...(prev[`${id}_gambar`] || [])];
+                        newArr.splice(index, 1);
+                        if (newArr.length === 0) {
+                            const newState = {...prev};
+                            delete newState[`${id}_gambar`];
+                            return newState;
+                        }
+                        return {...prev, [`${id}_gambar`]: newArr};
+                    });
                 } else {
-                    const newJawapan = {...jawapanKebakaran};
-                    delete newJawapan[`${id}_gambar`];
-                    setJawapanKebakaran(newJawapan);
+                    setJawapanKebakaran(prev => {
+                        const newArr = [...(prev[`${id}_gambar`] || [])];
+                        newArr.splice(index, 1);
+                        if (newArr.length === 0) {
+                            const newState = {...prev};
+                            delete newState[`${id}_gambar`];
+                            return newState;
+                        }
+                        return {...prev, [`${id}_gambar`]: newArr};
+                    });
                 }
             };
 
@@ -465,10 +494,16 @@
                         section.item.forEach((item, idx) => {
                             const ans = jawapanSemak[item.id];
                             const ulas = jawapanSemak[`${item.id}_ulasan`] || '';
-                            const gambar = jawapanSemak[`${item.id}_gambar`];
+                            const gambar = jawapanSemak[`${item.id}_gambar`]; // Kini sebuah array
                             
                             let ulasanContent = ulas;
-                            if (gambar) ulasanContent += '\n\n\n\n\n\n'; 
+                            if (gambar && gambar.length > 0) {
+                                // [NEW] Sediakan ruang kosong menegak berdasarkan jumlah gambar
+                                const numRows = Math.ceil(gambar.length / 2); // Andaikan 2 gambar sebaris
+                                for(let r = 0; r < numRows; r++) {
+                                    ulasanContent += '\n\n\n\n\n\n'; 
+                                }
+                            }
 
                             tableBodyWpi.push([
                                 idx + 1,
@@ -476,7 +511,7 @@
                                 ans === '1' ? '/' : '',
                                 ans === '0' ? '/' : '',
                                 (ans === 'tb' && secKey !== 'A') ? '/' : (secKey === 'A' ? '-' : ''),
-                                { content: ulasanContent, gambar: gambar }
+                                { content: ulasanContent, gambarArray: gambar } // [NEW] Luluskan array
                             ]);
                         });
                     });
@@ -501,13 +536,23 @@
                             5: { cellWidth: 'auto' }
                         },
                         didDrawCell: function (data) {
-                            if (data.column.index === 5 && data.cell.section === 'body' && data.cell.raw && data.cell.raw.gambar) {
-                                const imgData = data.cell.raw.gambar;
+                            // [NEW] Logic melukis banyak gambar di dalam grid (2 gambar sebaris)
+                            if (data.column.index === 5 && data.cell.section === 'body' && data.cell.raw && data.cell.raw.gambarArray && data.cell.raw.gambarArray.length > 0) {
+                                const imgArr = data.cell.raw.gambarArray;
                                 const dimX = 50;
                                 const dimY = 35;
-                                const posX = data.cell.x + 5;
-                                const posY = data.cell.y + data.cell.height - dimY - 5; 
-                                docWpi.addImage(imgData, 'JPEG', posX, posY, dimX, dimY);
+                                const startX = data.cell.x + 5;
+                                const numRows = Math.ceil(imgArr.length / 2);
+                                const totalHeight = numRows * (dimY + 5);
+                                const startY = data.cell.y + data.cell.height - totalHeight; 
+
+                                imgArr.forEach((imgData, index) => {
+                                    const row = Math.floor(index / 2);
+                                    const col = index % 2;
+                                    const posX = startX + (col * (dimX + 5));
+                                    const posY = startY + (row * (dimY + 5));
+                                    docWpi.addImage(imgData, 'JPEG', posX, posY, dimX, dimY);
+                                });
                             }
                         },
                         didDrawPage: function (data) {
@@ -573,16 +618,21 @@
                         if(q.type === 'date' && jawapanStr) jawapanStr = formatDate(jawapanStr);
 
                         let catatan = jawapanKebakaran[`${q.id}_other`] || "";
-                        let gambar = jawapanKebakaran[`${q.id}_gambar`];
+                        let gambar = jawapanKebakaran[`${q.id}_gambar`]; // Array
                         
                         let finalAns = jawapanStr;
                         if (catatan) finalAns += `\n(Ulasan: ${catatan})`;
-                        if (gambar) finalAns += `\n\n\n\n\n\n`; 
+                        if (gambar && gambar.length > 0) {
+                            const numRows = Math.ceil(gambar.length / 2); 
+                            for(let r = 0; r < numRows; r++) {
+                                finalAns += `\n\n\n\n\n\n`; 
+                            }
+                        }
 
                         let qText = q.soalan.replace(/^\d+\.\s*/, '');
                         let bil = q.soalan.match(/^\d+/)[0];
 
-                        tableBodyFire.push([bil, qText, { content: finalAns, gambar: gambar }]);
+                        tableBodyFire.push([bil, qText, { content: finalAns, gambarArray: gambar }]);
                     });
 
                     docFire.autoTable({
@@ -598,13 +648,22 @@
                             2: { cellWidth: 'auto' }
                         },
                         didDrawCell: function (data) {
-                            if (data.column.index === 2 && data.cell.section === 'body' && data.cell.raw && data.cell.raw.gambar) {
-                                const imgData = data.cell.raw.gambar;
+                            if (data.column.index === 2 && data.cell.section === 'body' && data.cell.raw && data.cell.raw.gambarArray && data.cell.raw.gambarArray.length > 0) {
+                                const imgArr = data.cell.raw.gambarArray;
                                 const dimX = 50;
                                 const dimY = 35;
-                                const posX = data.cell.x + 5;
-                                const posY = data.cell.y + data.cell.height - dimY - 5; 
-                                docFire.addImage(imgData, 'JPEG', posX, posY, dimX, dimY);
+                                const startX = data.cell.x + 5;
+                                const numRows = Math.ceil(imgArr.length / 2);
+                                const totalHeight = numRows * (dimY + 5);
+                                const startY = data.cell.y + data.cell.height - totalHeight; 
+
+                                imgArr.forEach((imgData, index) => {
+                                    const row = Math.floor(index / 2);
+                                    const col = index % 2;
+                                    const posX = startX + (col * (dimX + 5));
+                                    const posY = startY + (row * (dimY + 5));
+                                    docFire.addImage(imgData, 'JPEG', posX, posY, dimX, dimY);
+                                });
                             }
                         }
                     });
@@ -639,10 +698,14 @@
                         soalanSenaraiSemak[secKey].item.forEach(item => {
                             rowKkp.push(jawapanSemak[item.id] || ''); 
                             let combinedUlasan = jawapanSemak[`${item.id}_ulasan`] || '';
-                            if (jawapanSemak[`${item.id}_gambar`]) {
-                                let b64 = jawapanSemak[`${item.id}_gambar`];
-                                if(b64.length > 45000) b64 = b64.substring(0, 45000) + "...[GAMBAR]";
-                                combinedUlasan += '\n\n[GAMBAR:\n' + b64 + ']';
+                            
+                            // Susunan lampiran log ke Excel (jika ada banyak gambar)
+                            if (jawapanSemak[`${item.id}_gambar`] && jawapanSemak[`${item.id}_gambar`].length > 0) {
+                                let imgLinks = jawapanSemak[`${item.id}_gambar`].map((b64, idx) => {
+                                    let shortB64 = b64.length > 45000 ? b64.substring(0, 45000) + "...[GAMBAR]" : b64;
+                                    return `[GAMBAR ${idx + 1}:\n${shortB64}]`;
+                                }).join('\n\n');
+                                combinedUlasan += '\n\n' + imgLinks;
                             }
                             rowKkp.push(combinedUlasan); 
                         });
@@ -658,10 +721,14 @@
                         rowKebakaran.push(valStr); 
                         
                         let combinedCatatan = jawapanKebakaran[`${q.id}_other`] || '';
-                        if (jawapanKebakaran[`${q.id}_gambar`]) {
-                            let b64 = jawapanKebakaran[`${q.id}_gambar`];
-                            if(b64.length > 45000) b64 = b64.substring(0, 45000) + "...[GAMBAR]";
-                            combinedCatatan += '\n\n[GAMBAR:\n' + b64 + ']';
+                        
+                        // Susunan lampiran log ke Excel 
+                        if (jawapanKebakaran[`${q.id}_gambar`] && jawapanKebakaran[`${q.id}_gambar`].length > 0) {
+                            let imgLinks = jawapanKebakaran[`${q.id}_gambar`].map((b64, idx) => {
+                                let shortB64 = b64.length > 45000 ? b64.substring(0, 45000) + "...[GAMBAR]" : b64;
+                                return `[GAMBAR ${idx + 1}:\n${shortB64}]`;
+                            }).join('\n\n');
+                            combinedCatatan += '\n\n' + imgLinks;
                         }
                         rowKebakaran.push(combinedCatatan); 
                     });
@@ -743,7 +810,7 @@
                         </div>
                     </div>
 
-                    {}
+                    {/* Main Content Area */}
                     <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                         <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-8 md:py-4 flex justify-between items-center z-10 shrink-0">
                             <div className="flex items-center">
@@ -771,7 +838,7 @@
                         <main className="flex-1 overflow-y-auto p-4 md:p-8">
                             <div className="max-w-4xl mx-auto w-full">
                                 
-                                {}
+                                {/* TAB 1: Maklumat Asas */}
                                 {activeTab === 'maklumat' && (
                                     <div className="tab-content bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                                         <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-4 md:mb-6 border-b pb-4">Maklumat Asas Pemeriksaan</h2>
@@ -848,7 +915,7 @@
                                     </div>
                                 )}
 
-                                {}
+                                {/* TAB 2: Senarai Semak WPI */}
                                 {activeTab === 'senarai-semak' && (
                                     <div className="tab-content space-y-6">
                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
@@ -920,15 +987,20 @@
                                                                                 placeholder="Ulasan" 
                                                                                 className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 min-h-[48px] text-sm border bg-white resize-none"
                                                                             />
-                                                                            <div className="mt-2 flex items-center justify-between gap-2">
-                                                                                <label className="cursor-pointer min-h-[40px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded flex items-center gap-2 border border-slate-300 transition-colors">
+                                                                            <div className="mt-2 flex flex-col gap-2">
+                                                                                <label className="cursor-pointer min-h-[40px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded flex w-max items-center gap-2 border border-slate-300 transition-colors">
                                                                                     <Icons.Camera /> Gambar
-                                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, 'semak')} />
+                                                                                    <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleImageUpload(e, item.id, 'semak')} />
                                                                                 </label>
-                                                                                {jawapanSemak[`${item.id}_gambar`] && (
-                                                                                    <div className="relative group">
-                                                                                        <img src={jawapanSemak[`${item.id}_gambar`]} className="h-10 w-12 object-cover rounded border border-slate-300 shadow-sm" alt="Lampiran" />
-                                                                                        <button onClick={() => removeImage(item.id, 'semak')} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-sm font-bold">&times;</button>
+                                                                                
+                                                                                {jawapanSemak[`${item.id}_gambar`] && jawapanSemak[`${item.id}_gambar`].length > 0 && (
+                                                                                    <div className="flex flex-wrap gap-2 mt-2">
+                                                                                        {jawapanSemak[`${item.id}_gambar`].map((imgSrc, imgIdx) => (
+                                                                                            <div key={imgIdx} className="relative group">
+                                                                                                <img src={imgSrc} className="h-10 w-12 object-cover rounded border border-slate-300 shadow-sm" alt="Lampiran" />
+                                                                                                <button onClick={() => removeImage(item.id, 'semak', imgIdx)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-sm font-bold">&times;</button>
+                                                                                            </div>
+                                                                                        ))}
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -966,7 +1038,7 @@
                                     </div>
                                 )}
 
-                                {}
+                                {/* TAB 3: Audit Kebakaran */}
                                 {activeTab === 'audit-kebakaran' && (
                                     <div className="tab-content space-y-6">
                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 border-b pb-4 gap-4">
@@ -1028,15 +1100,20 @@
                                                                     placeholder="Ulasan" 
                                                                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 min-h-[48px] text-sm border bg-white text-slate-600 resize-none"
                                                                 />
-                                                                <div className="mt-2 flex items-center gap-3">
-                                                                    <label className="cursor-pointer min-h-[40px] px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded flex items-center gap-2 border border-slate-300 transition-colors">
+                                                                <div className="mt-2 flex flex-col gap-2">
+                                                                    <label className="cursor-pointer min-h-[40px] px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 w-max text-xs font-semibold rounded flex items-center gap-2 border border-slate-300 transition-colors">
                                                                         <Icons.Camera /> Gambar
-                                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, q.id, 'kebakaran')} />
+                                                                        <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleImageUpload(e, q.id, 'kebakaran')} />
                                                                     </label>
-                                                                    {jawapanKebakaran[`${q.id}_gambar`] && (
-                                                                        <div className="relative group">
-                                                                            <img src={jawapanKebakaran[`${q.id}_gambar`]} className="h-10 w-12 object-cover rounded border border-slate-300 shadow-sm" alt="Lampiran" />
-                                                                            <button onClick={() => removeImage(q.id, 'kebakaran')} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-sm font-bold">&times;</button>
+                                                                    
+                                                                    {jawapanKebakaran[`${q.id}_gambar`] && jawapanKebakaran[`${q.id}_gambar`].length > 0 && (
+                                                                        <div className="flex flex-wrap gap-2 mt-2">
+                                                                            {jawapanKebakaran[`${q.id}_gambar`].map((imgSrc, imgIdx) => (
+                                                                                <div key={imgIdx} className="relative group">
+                                                                                    <img src={imgSrc} className="h-10 w-12 object-cover rounded border border-slate-300 shadow-sm" alt="Lampiran" />
+                                                                                    <button onClick={() => removeImage(q.id, 'kebakaran', imgIdx)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-sm font-bold">&times;</button>
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -1059,7 +1136,7 @@
                                     </div>
                                 )}
 
-                                {}
+                                {/* TAB 4: Ulasan & Pengesahan */}
                                 {activeTab === 'ulasan' && (
                                     <div className="tab-content space-y-6">
                                         <div className="bg-indigo-50 rounded-xl border border-indigo-100 p-4 md:p-6 flex flex-col sm:flex-row items-center justify-between shadow-sm gap-4">
@@ -1161,7 +1238,7 @@
                         </main>
                     </div>
                     
-                    {}
+                    {/* Success Modal */}
                     {showSuccessModal && (
                         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-[90vw] md:max-w-md text-center relative animate-[fadeIn_0.3s_ease-out] overflow-y-auto max-h-[90vh]">
