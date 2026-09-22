@@ -234,9 +234,9 @@
             const [auditorsList, setAuditorsList] = useState([]);
 
             // State Jawapan
-            const [jawapanSemak, setJawapanSemak] = useState({}); // Standard WPI
-            const [jawapanKebakaran, setJawapanKebakaran] = useState({}); // Standard Kebakaran
-            const [jawapanKhusus, setJawapanKhusus] = useState({}); // Untuk Makmal ATAU Radiologi
+            const [jawapanSemak, setJawapanSemak] = useState({}); 
+            const [jawapanKebakaran, setJawapanKebakaran] = useState({}); 
+            const [jawapanKhusus, setJawapanKhusus] = useState({}); 
 
             const [ulasan, setUlasan] = useState('');
             const [pengesah, setPengesah] = useState('');
@@ -323,6 +323,12 @@
                 });
             };
 
+            const getFasilitiOptions = () => {
+                if (jenisAudit === 'radiologi') return ["Radiologi Emerald", "CT Scan"];
+                if (jenisAudit === 'makmal') return ["Makmal & Transfusi", "Makmal Emerald"];
+                return senaraiFasiliti;
+            };
+
             // Pengiraan Standard WPI
             const calculationsWpi = useMemo(() => {
                 let ya = 0, tidak = 0, tb = 0;
@@ -367,8 +373,7 @@
                         }
                     });
                 });
-                const peratus = totalMax > 0 ? ((totalObtained / totalMax) * 100).toFixed(2) : 0;
-                return { totalMax, totalObtained, answered, totalQuestions, peratus };
+                return { totalMax, totalObtained, answered, totalQuestions };
             }, [jenisAudit, jawapanKhusus]);
 
             const handleSimpanBahagian = (secKey) => {
@@ -386,7 +391,6 @@
                 let msgs = [];
                 
                 if (jenisAudit === 'standard') {
-                    // Validasi WPI
                     let missingWPI = {}; 
                     Object.keys(soalanSenaraiSemak).forEach(secKey => {
                         soalanSenaraiSemak[secKey].item.forEach((item, idx) => {
@@ -399,7 +403,6 @@
                     const wpiKeys = Object.keys(missingWPI);
                     if (wpiKeys.length > 0) msgs.push(`🔴 Senarai Semak WPI:\n${wpiKeys.map(k => `• Seksyen ${k}: Soalan ${missingWPI[k].join(', ')}`).join('\n')}`);
                     
-                    // Validasi Kebakaran
                     let missingKebakaran = [];
                     senaraiSoalanKebakaran.forEach(q => {
                         const val = jawapanKebakaran[q.id];
@@ -413,7 +416,6 @@
                     });
                     if (missingKebakaran.length > 0) msgs.push(`🔴 Audit Kebakaran:\n• Soalan ${missingKebakaran.join(', ')}`);
                 } else {
-                    // Validasi Khusus (Makmal/Radiologi)
                     let missingKhusus = {};
                     const targetSoalan = jenisAudit === 'makmal' ? soalanMakmal : soalanRadiologi;
                     Object.keys(targetSoalan).forEach(secKey => {
@@ -447,9 +449,6 @@
 
                     let payload = { jenisAudit: jenisAudit };
 
-                    // =================================================================
-                    // JANA PDF KHUSUS (MAKMAL / RADIOLOGI)
-                    // =================================================================
                     if (jenisAudit !== 'standard') {
                         const isMakmal = jenisAudit === 'makmal';
                         const targetSoalan = isMakmal ? soalanMakmal : soalanRadiologi;
@@ -459,6 +458,7 @@
                         docKhusus.setFontSize(10);
                         docKhusus.setFont("helvetica", "bold");
                         docKhusus.text(isMakmal ? "LAMPIRAN 3" : "LAMPIRAN 5", 480, yPos);
+                        docKhusus.text(isMakmal ? "OHU/Audit/BM" : "OHU/Audit/BR", 480, yPos + 15);
                         yPos += 20;
                         docKhusus.setFontSize(12);
                         docKhusus.text(`FORMAT AUDIT KESELAMATAN DAN KESIHATAN ${isMakmal ? 'DI MAKMAL' : '(RADIOLOGI)'}`, docKhusus.internal.pageSize.getWidth()/2, yPos, {align: "center"});
@@ -474,7 +474,7 @@
                         yPos += 25;
 
                         const tableBodyKhusus = [];
-                        let rowDataKhusus = [ masaRekod, maklumat.lokasi, formatDate(maklumat.tarikh), namaAuditors, pengesah, calculationsKhusus.peratus + '%' ];
+                        let rowDataKhusus = [ masaRekod, maklumat.lokasi, formatDate(maklumat.tarikh), namaAuditors, pengesah, calculationsKhusus.totalObtained.toString() ];
 
                         Object.keys(targetSoalan).forEach(secKey => {
                             const section = targetSoalan[secKey];
@@ -506,8 +506,11 @@
                             });
                         });
 
+                        let sumText = isMakmal ? "(A+B+C+D+E+F+G+H+I+J)" : "(A+B+C+D+E+F+G+H)";
                         tableBodyKhusus.push([
-                            { content: `Jumlah (Diperolehi / Maksima) x 100 =\n( ${calculationsKhusus.totalObtained} / ${calculationsKhusus.totalMax} ) x 100 = ${calculationsKhusus.peratus}%\n\n* Denominator (Jumlah Maksima) tidak termasuk item 'Tidak Berkenaan' (TB)`, colSpan: 6, styles: { fontStyle: 'bold', halign: 'left' } }
+                            { content: `JUMLAH KESELURUHAN ${sumText}`, colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } },
+                            { content: `${calculationsKhusus.totalObtained}`, styles: { fontStyle: 'bold', halign: 'center', fontSize: 11 } },
+                            { content: '', styles: { fillColor: [255,255,255] } }
                         ]);
 
                         docKhusus.autoTable({
@@ -550,13 +553,9 @@
                         payload.filenameKhusus = `Laporan_Audit_${isMakmal?'Makmal':'Radiologi'}_${maklumat.lokasi.replace(/[^a-zA-Z0-9]/g, '_')}_${maklumat.tarikh}.pdf`;
                         payload.rowKhusus = rowDataKhusus;
 
-                        // Save Locally
                         docKhusus.save(payload.filenameKhusus);
 
                     } else {
-                        // =================================================================
-                        // JANA PDF STANDARD (WPI & KEBAKARAN)
-                        // =================================================================
                         const docWpi = new jsPDF('p', 'pt', 'a4');
                         let yPosWpi = 40;
                         docWpi.setFontSize(10); docWpi.setFont("helvetica", "bold"); docWpi.text("KKP(BKP)/PTK-01", 450, yPosWpi); yPosWpi += 20;
@@ -662,7 +661,6 @@
                         setTimeout(() => { docFire.save(payload.filenameKebakaran); }, 800);
                     }
 
-                    // Hantar Data ke Google Apps Script
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: "POST", mode: "no-cors", 
                         body: JSON.stringify(payload),
@@ -691,7 +689,6 @@
                 </button>
             );
 
-            // Generator Table Row untuk Audit Khusus
             const renderKhususTable = (targetSoalan) => {
                 return Object.keys(targetSoalan).map(secKey => {
                     const section = targetSoalan[secKey];
@@ -800,8 +797,8 @@
                                 </React.Fragment>
                             )}
 
-                            {jenisAudit === 'makmal' && <NavItem id="audit-khusus" label="Audit Khusus (Makmal)" icon={Icons.Document} />}
-                            {jenisAudit === 'radiologi' && <NavItem id="audit-khusus" label="Audit Khusus (Radiologi)" icon={Icons.Document} />}
+                            {jenisAudit === 'makmal' && <NavItem id="audit-khusus" label="Audit Makmal (OHU/Audit/BM)" icon={Icons.Document} />}
+                            {jenisAudit === 'radiologi' && <NavItem id="audit-khusus" label="Audit Radiologi (OHU/Audit/BR)" icon={Icons.Document} />}
 
                             <NavItem id="ulasan" label="Ulasan & Pengesahan" icon={Icons.Signature} />
                         </nav>
@@ -846,7 +843,8 @@
                                                 value={jenisAudit} 
                                                 onChange={(e) => {
                                                     setJenisAudit(e.target.value);
-                                                    setJawapanKhusus({}); // reset answers when switching specialized mode
+                                                    setJawapanKhusus({}); 
+                                                    setMaklumat(prev => ({...prev, lokasi: ''}));
                                                 }}
                                                 className="w-full rounded-md border-indigo-300 shadow-sm focus:border-indigo-500 p-3 min-h-[48px] bg-white font-medium text-slate-700"
                                             >
@@ -869,7 +867,7 @@
                                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Lokasi/Bahagian/Wad</label>
                                                 <select name="lokasi" value={maklumat.lokasi} onChange={handleMaklumatChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 p-3 min-h-[48px] border bg-white">
                                                     <option value="">Pilih Fasiliti...</option>
-                                                    {senaraiFasiliti.map((f, i) => <option key={i} value={f}>{f}</option>)}
+                                                    {getFasilitiOptions().map((f, i) => <option key={i} value={f}>{f}</option>)}
                                                 </select>
                                             </div>
                                             <div>
@@ -917,14 +915,24 @@
                                 {/* --- TAB KHUSUS (MAKMAL / RADIOLOGI) --- */}
                                 {activeTab === 'audit-khusus' && jenisAudit !== 'standard' && (
                                     <div className="tab-content space-y-6">
-                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
-                                            <div className="flex-1">
+                                        <div className="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
+                                            <div className="flex-1 w-full">
                                                 <h2 className="text-lg md:text-2xl font-bold text-slate-800">
                                                     Format Audit Keselamatan & Kesihatan ({jenisAudit === 'makmal' ? 'Makmal' : 'Radiologi'})
                                                 </h2>
-                                                <p className="text-slate-500 text-sm mt-2">Sila nilaikan skala prestasi (0: Tidak Memuaskan, 1: Memuaskan, 2: Baik). Tandakan TB jika tidak berkenaan.</p>
+                                                <p className="text-slate-600 text-sm mt-2">
+                                                    Sila nilaikan skala prestasi (0: Tidak Memuaskan, 1: Memuaskan, 2: Baik). Tandakan TB jika tidak berkenaan.
+                                                </p>
+                                                <div className="mt-4 bg-slate-100 p-4 rounded-lg text-xs md:text-sm text-slate-700 font-medium border border-slate-200">
+                                                    <p className="font-bold text-slate-800 mb-2">'Weightage':</p>
+                                                    <ul className="space-y-2">
+                                                        <li><span className="font-bold text-indigo-700">1 - 'Minor'</span> bagi perkara yang optional atau tidak menjejaskan kesihatan/ keselamatan</li>
+                                                        <li><span className="font-bold text-indigo-700">2 - 'Major'</span> bagi perkara yang kewujudannya boleh mempertingkatkan tahap keselamatan dan kesihatan anggota/ tempat kerja</li>
+                                                        <li><span className="font-bold text-indigo-700">3 - 'Critical'</span> bagi perkara yang boleh menjejaskan kesihatan/ keselamatan anggota atau dibawah peruntukan Akta</li>
+                                                    </ul>
+                                                </div>
                                             </div>
-                                            <div className="text-left md:text-right shrink-0">
+                                            <div className="text-left md:text-right shrink-0 mt-2 md:mt-0">
                                                 <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold ${calculationsKhusus.answered === calculationsKhusus.totalQuestions ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                                     Selesai: {calculationsKhusus.answered}/{calculationsKhusus.totalQuestions}
                                                 </span>
@@ -947,13 +955,122 @@
                                 {/* --- TAB STANDARD (WPI) --- */}
                                 {activeTab === 'senarai-semak' && jenisAudit === 'standard' && (
                                     <div className="tab-content space-y-6">
-                                        {/* KOD LAMA TAB WPI ANDA DI SINI. UNTUK KEPENTINGAN KERINGKASAN PANDUAN INI SAYA PENDEKKAN, TAPI LOGIKNYA MASIH SAMA SEPERTI DI KODE ASAL ANDA. */}
-                                        <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 text-center text-blue-800 font-medium">
-                                            Ruangan WPI Sedia Ada Anda. (Sila rujuk file lama anda untuk kandungan penuh UI bahagian WPI ini).
+                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
+                                            <div className="flex-1">
+                                                <h2 className="text-lg md:text-2xl font-bold text-slate-800">Format Senarai Semak Pemeriksaan Tempat Kerja Aktiviti Keselamatan dan Kesihatan Pekerjaan KKM</h2>
+                                                <p className="text-slate-500 text-sm mt-2">Sila lengkapkan semua bahagian untuk menjana laporan.</p>
+                                            </div>
+                                            <div className="text-left md:text-right shrink-0">
+                                                <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold ${calculationsWpi.answered === totalSoalanWpi ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                    Selesai: {calculationsWpi.answered}/{totalSoalanWpi}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="mt-8 flex justify-between pt-4 border-t border-slate-200">
-                                            <button onClick={() => handleTabChange('maklumat')} className="bg-slate-100 px-4 py-2 rounded-lg">Kembali</button>
-                                            <button onClick={() => handleTabChange('audit-kebakaran')} className="bg-slate-800 text-white px-6 py-2 rounded-lg">Seterusnya</button>
+
+                                        {Object.keys(soalanSenaraiSemak).map(secKey => {
+                                            const section = soalanSenaraiSemak[secKey];
+                                            return (
+                                                <div key={secKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full mb-6">
+                                                    <div className="bg-slate-100 px-4 py-3 md:px-6 md:py-4 border-b border-gray-200">
+                                                        <h3 className="font-bold text-slate-800 text-sm md:text-base">{section.tajuk}</h3>
+                                                    </div>
+                                                    
+                                                    <div className="p-0 table-container">
+                                                        <table className="w-full text-sm text-left min-w-[700px]">
+                                                            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
+                                                                <tr>
+                                                                    <th className="px-4 py-3 w-12 text-center align-middle">Bil</th>
+                                                                    <th className="px-4 py-3 align-middle w-1/3">Perkara</th>
+                                                                    <th className="px-2 py-3 text-center w-20 align-middle">Ya<br/><span className="text-xs font-normal opacity-75">(1)</span></th>
+                                                                    <th className="px-2 py-3 text-center w-20 align-middle">Tidak<br/><span className="text-xs font-normal opacity-75">(0)</span></th>
+                                                                    <th className="px-2 py-3 text-center w-20 align-middle">TB</th>
+                                                                    <th className="px-4 py-3 text-left align-middle w-1/3">Ulasan & Gambar</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {section.item.map((item, idx) => (
+                                                                    <tr key={item.id} className="border-b last:border-0 hover:bg-slate-50">
+                                                                        <td className="px-4 py-4 text-center font-bold text-slate-700 align-top">{idx + 1}</td>
+                                                                        <td className="px-4 py-4 text-slate-700 leading-relaxed align-top">{item.soalan}</td>
+                                                                        <td className="px-2 py-4 text-center align-top">
+                                                                            <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer">
+                                                                                <input type="radio" name={item.id} value="1" checked={jawapanSemak[item.id] === '1'} onChange={() => handleRadioChange(item.id, '1')} className="w-6 h-6 text-indigo-600 focus:ring-indigo-500 border-gray-300"/>
+                                                                            </label>
+                                                                        </td>
+                                                                        <td className="px-2 py-4 text-center align-top">
+                                                                            <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer">
+                                                                                <input type="radio" name={item.id} value="0" checked={jawapanSemak[item.id] === '0'} onChange={() => handleRadioChange(item.id, '0')} className="w-6 h-6 text-indigo-600 focus:ring-indigo-500 border-gray-300"/>
+                                                                            </label>
+                                                                        </td>
+                                                                        <td className="px-2 py-4 text-center align-top">
+                                                                            <label className={`flex justify-center items-center w-full min-h-[48px] ${secKey === 'A' ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                                                                <input 
+                                                                                    type="radio" 
+                                                                                    name={item.id} 
+                                                                                    value="tb" 
+                                                                                    checked={jawapanSemak[item.id] === 'tb'} 
+                                                                                    onChange={() => handleRadioChange(item.id, 'tb')}
+                                                                                    disabled={secKey === 'A'}
+                                                                                    className={`w-6 h-6 border-gray-300 ${secKey === 'A' ? 'opacity-40 bg-gray-200' : 'text-indigo-600 focus:ring-indigo-500'}`}
+                                                                                    title={secKey === 'A' ? 'TB tidak dibenarkan untuk Seksyen A' : ''}
+                                                                                />
+                                                                            </label>
+                                                                        </td>
+                                                                        <td className="px-4 py-4 align-top">
+                                                                            <textarea 
+                                                                                rows="2"
+                                                                                value={jawapanSemak[`${item.id}_ulasan`] || ''} 
+                                                                                onChange={(e) => setJawapanSemak({...jawapanSemak, [`${item.id}_ulasan`]: e.target.value})} 
+                                                                                placeholder="Ulasan" 
+                                                                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 min-h-[48px] text-sm border bg-white resize-none"
+                                                                            />
+                                                                            <div className="mt-2 flex flex-col gap-2">
+                                                                                <label className="cursor-pointer min-h-[40px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded flex w-max items-center gap-2 border border-slate-300 transition-colors">
+                                                                                    <Icons.Camera /> Gambar
+                                                                                    <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleImageUpload(e, item.id, 'semak')} />
+                                                                                </label>
+                                                                                
+                                                                                {jawapanSemak[`${item.id}_gambar`] && jawapanSemak[`${item.id}_gambar`].length > 0 && (
+                                                                                    <div className="flex flex-wrap gap-2 mt-2">
+                                                                                        {jawapanSemak[`${item.id}_gambar`].map((imgSrc, imgIdx) => (
+                                                                                            <div key={imgIdx} className="relative group">
+                                                                                                <img src={imgSrc} className="h-10 w-12 object-cover rounded border border-slate-300 shadow-sm" alt="Lampiran" />
+                                                                                                <button onClick={() => removeImage(item.id, 'semak', imgIdx)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-sm font-bold">&times;</button>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div className="bg-slate-50 px-4 py-3 md:px-6 md:py-4 border-t border-gray-200 flex justify-end items-center gap-4">
+                                                        {savedSection === secKey && (
+                                                            <span className="text-green-600 text-sm font-bold flex items-center gap-1.5 animate-[fadeIn_0.3s_ease-out]">
+                                                                <Icons.CheckSmall /> Berjaya Disimpan
+                                                            </span>
+                                                        )}
+                                                        <button 
+                                                            onClick={() => handleSimpanBahagian(secKey)}
+                                                            className="min-h-[48px] text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-5 py-2 rounded-md font-bold transition-colors shadow-sm"
+                                                        >
+                                                            Simpan Bahagian {secKey}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        <div className="mt-8 flex flex-col sm:flex-row justify-between pt-4 border-t border-slate-200 gap-4">
+                                            <button onClick={() => handleTabChange('maklumat')} className="min-h-[48px] w-full sm:w-auto text-slate-500 hover:text-slate-800 px-4 py-2 font-medium bg-slate-100 hover:bg-slate-200 rounded-lg sm:bg-transparent sm:hover:bg-transparent">
+                                                &larr; Kembali
+                                            </button>
+                                            <button onClick={() => handleTabChange('audit-kebakaran')} className="min-h-[48px] w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg transition-colors shadow-md font-medium">
+                                                Seterusnya &rarr;
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -961,13 +1078,97 @@
                                 {/* --- TAB STANDARD (KEBAKARAN) --- */}
                                 {activeTab === 'audit-kebakaran' && jenisAudit === 'standard' && (
                                     <div className="tab-content space-y-6">
-                                        {/* KOD LAMA TAB KEBAKARAN ANDA DI SINI */}
-                                        <div className="bg-orange-50 p-6 rounded-xl border border-orange-200 text-center text-orange-800 font-medium">
-                                            Ruangan Kebakaran Sedia Ada Anda. (Sila rujuk file lama anda untuk kandungan penuh UI bahagian ini).
+                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 border-b pb-4 gap-4">
+                                            <div className="flex-1">
+                                                <h2 className="text-lg md:text-2xl font-bold text-slate-800">Audit Keselamatan Kebakaran</h2>
+                                                <p className="text-slate-500 text-sm mt-2">Sila lengkapkan semua maklumat mengikut senarai terkini (34 Soalan).</p>
+                                            </div>
+                                            <div className="text-left md:text-right shrink-0">
+                                                <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold ${answeredKebakaran === senaraiSoalanKebakaran.length ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                    Selesai: {answeredKebakaran}/{senaraiSoalanKebakaran.length}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="mt-8 flex justify-between pt-4 border-t border-slate-200">
-                                            <button onClick={() => handleTabChange('senarai-semak')} className="bg-slate-100 px-4 py-2 rounded-lg">Kembali</button>
-                                            <button onClick={() => handleTabChange('ulasan')} className="bg-slate-800 text-white px-6 py-2 rounded-lg">Seterusnya</button>
+
+                                        <div className="space-y-4">
+                                            {senaraiSoalanKebakaran.map((q, idx) => (
+                                                <React.Fragment key={q.id}>
+                                                    {q.sec && (
+                                                        <h3 className="font-bold text-slate-800 text-base md:text-lg mt-8 mb-3 pb-2 border-b-2 border-slate-200 uppercase tracking-wide">{q.sec}</h3>
+                                                    )}
+                                                    <div className="bg-white p-4 md:p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col lg:flex-row gap-4 justify-between items-start hover:shadow-md transition-shadow">
+                                                        <div className="flex-1 w-full">
+                                                            <p className="font-medium text-slate-800 leading-relaxed text-sm md:text-base">{q.soalan}</p>
+                                                        </div>
+                                                        <div className="w-full lg:w-1/3 lg:min-w-[320px] space-y-3">
+                                                            
+                                                            {q.type === 'radio' && (
+                                                                <div className="flex flex-col gap-2">
+                                                                    {q.options.map(opt => (
+                                                                        <label key={opt} className="flex items-center gap-3 cursor-pointer p-3 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors min-h-[48px]">
+                                                                            <input type="radio" name={q.id} value={opt} checked={jawapanKebakaran[q.id] === opt} onChange={(e) => handleKebakaranChange(q.id, e.target.value, 'radio')} className="w-6 h-6 text-indigo-600 focus:ring-indigo-500 border-gray-300"/>
+                                                                            <span className="text-sm md:text-base text-slate-700 font-medium">{opt}</span>
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            {q.type === 'checkbox' && (
+                                                                <div className="flex flex-col gap-2">
+                                                                    {q.options.map(opt => (
+                                                                        <label key={opt} className="flex items-center gap-3 cursor-pointer p-3 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors min-h-[48px]">
+                                                                            <input type="checkbox" value={opt} checked={(jawapanKebakaran[q.id] || []).includes(opt)} onChange={(e) => handleKebakaranChange(q.id, e.target.value, 'checkbox')} className="w-6 h-6 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"/>
+                                                                            <span className="text-sm md:text-base text-slate-700 font-medium">{opt}</span>
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            {q.type === 'date' && (
+                                                                <input type="date" value={jawapanKebakaran[q.id] || ''} onChange={(e) => handleKebakaranChange(q.id, e.target.value, 'date')} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 min-h-[48px] text-sm border bg-slate-50 font-medium text-slate-700"/>
+                                                            )}
+                                                            {q.type === 'text' && (
+                                                                <input type="text" value={jawapanKebakaran[q.id] || ''} onChange={(e) => handleKebakaranChange(q.id, e.target.value, 'text')} placeholder="Sila nyatakan jawapan..." className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 min-h-[48px] text-sm border bg-slate-50 font-medium text-slate-700"/>
+                                                            )}
+                                                            
+                                                            <div className="pt-3 border-t border-slate-100 mt-2">
+                                                                <textarea 
+                                                                    rows="2"
+                                                                    value={jawapanKebakaran[`${q.id}_other`] || ''} 
+                                                                    onChange={(e) => setJawapanKebakaran({...jawapanKebakaran, [`${q.id}_other`]: e.target.value})} 
+                                                                    placeholder="Ulasan tambahan..." 
+                                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 min-h-[48px] text-sm border bg-white text-slate-600 resize-none"
+                                                                />
+                                                                <div className="mt-2 flex flex-col gap-2">
+                                                                    <label className="cursor-pointer min-h-[40px] px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 w-max text-xs font-semibold rounded flex items-center gap-2 border border-slate-300 transition-colors">
+                                                                        <Icons.Camera /> Gambar
+                                                                        <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleImageUpload(e, q.id, 'kebakaran')} />
+                                                                    </label>
+                                                                    
+                                                                    {jawapanKebakaran[`${q.id}_gambar`] && jawapanKebakaran[`${q.id}_gambar`].length > 0 && (
+                                                                        <div className="flex flex-wrap gap-2 mt-2">
+                                                                            {jawapanKebakaran[`${q.id}_gambar`].map((imgSrc, imgIdx) => (
+                                                                                <div key={imgIdx} className="relative group">
+                                                                                    <img src={imgSrc} className="h-10 w-12 object-cover rounded border border-slate-300 shadow-sm" alt="Lampiran" />
+                                                                                    <button onClick={() => removeImage(q.id, 'kebakaran', imgIdx)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-sm font-bold">&times;</button>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </React.Fragment>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-8 flex flex-col sm:flex-row justify-between pt-4 border-t border-slate-200 gap-4">
+                                            <button onClick={() => handleTabChange('senarai-semak')} className="min-h-[48px] w-full sm:w-auto text-slate-500 hover:text-slate-800 px-4 py-2 font-medium bg-slate-100 hover:bg-slate-200 rounded-lg sm:bg-transparent sm:hover:bg-transparent">
+                                                &larr; Kembali
+                                            </button>
+                                            <button onClick={() => handleTabChange('ulasan')} className="min-h-[48px] w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg transition-colors shadow-md font-medium">
+                                                Seterusnya &rarr;
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -976,14 +1177,18 @@
                                 {activeTab === 'ulasan' && (
                                     <div className="tab-content space-y-6">
                                         <div className="bg-indigo-50 rounded-xl border border-indigo-100 p-4 md:p-6 flex flex-col sm:flex-row items-center justify-between shadow-sm gap-4">
-                                            <div className="text-center sm:text-left">
-                                                <h3 className="text-indigo-900 font-bold text-lg">Rumusan Markah Audit</h3>
+                                            <div className="text-center sm:text-left flex-1">
+                                                <h3 className="text-indigo-900 font-bold text-lg mb-2">Rumusan Markah Audit</h3>
                                                 {jenisAudit === 'standard' ? (
-                                                    <p className="text-indigo-700 text-sm mt-1 font-medium">(Bil. "Ya" / Denominator) x 100</p>
+                                                    <React.Fragment>
+                                                        <p className="text-indigo-700 text-sm font-medium">(Bil. "Ya" / Denominator) x 100</p>
+                                                        <p className="text-indigo-600 text-xs mt-2 italic">*Denominator tidak termasuk item 'Tidak Berkenaan' (TB).</p>
+                                                    </React.Fragment>
                                                 ) : (
-                                                    <p className="text-indigo-700 text-sm mt-1 font-medium">(Jumlah Diperoleh / Jumlah Maksima) x 100</p>
+                                                    <p className="text-slate-600 text-sm italic">
+                                                        *Sistem memaparkan nilai JUMLAH KESELURUHAN markah diperolehi selari dengan standard penilaian.
+                                                    </p>
                                                 )}
-                                                <p className="text-indigo-600 text-xs mt-2 italic">*Denominator/Maksima tidak termasuk item 'Tidak Berkenaan' (TB).</p>
                                             </div>
                                             <div className="flex gap-4 sm:gap-6 text-center w-full sm:w-auto justify-around">
                                                 {jenisAudit === 'standard' ? (
@@ -993,11 +1198,11 @@
                                                         <div><p className="text-xs font-semibold text-indigo-500 uppercase mb-1">Peratusan</p><p className="text-2xl font-bold text-green-600">{calculationsWpi.peratus}%</p></div>
                                                     </React.Fragment>
                                                 ) : (
-                                                    <React.Fragment>
-                                                        <div><p className="text-xs font-semibold text-indigo-500 uppercase mb-1">Diperoleh</p><p className="text-2xl font-bold text-indigo-900">{calculationsKhusus.totalObtained}</p></div>
-                                                        <div><p className="text-xs font-semibold text-indigo-500 uppercase mb-1">Maksima</p><p className="text-2xl font-bold text-slate-600">{calculationsKhusus.totalMax}</p></div>
-                                                        <div><p className="text-xs font-semibold text-indigo-500 uppercase mb-1">Peratusan</p><p className="text-2xl font-bold text-green-600">{calculationsKhusus.peratus}%</p></div>
-                                                    </React.Fragment>
+                                                    <div className="flex flex-col text-center w-full border-t sm:border-t-0 sm:border-l border-indigo-200 pt-4 sm:pt-0 sm:pl-6">
+                                                        <p className="text-xs font-bold text-indigo-500 mb-1 leading-tight">JUMLAH KESELURUHAN<br/>{jenisAudit === 'makmal' ? '(A+B+C+D+E+F+G+H+I+J)' : '(A+B+C+D+E+F+G+H)'}</p>
+                                                        <p className="text-4xl font-black text-indigo-900 mt-2">{calculationsKhusus.totalObtained}</p>
+                                                        <p className="text-xs font-semibold text-indigo-600 mt-1 uppercase tracking-wide">Markah Diperolehi</p>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
