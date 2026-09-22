@@ -91,7 +91,7 @@
             "Kejururawatan", "Kualiti/Kejuruteraan/HEI/Pustaka", "Operator", "Kaunter Pendaftaran Emerald", "Kawalan Infeksi", "UKA"
         ];
 
-        // --- DATA SOALAN WPI & KEBAKARAN (Sedia ada) ---
+        // --- DATA SOALAN WPI & KEBAKARAN ---
         const soalanSenaraiSemak = {
             A: { tajuk: "A. Dasar Keselamatan dan Kesihatan", item: [ { id: "A1", soalan: "Dasar Keselamatan & Kesihatan Pekerjaan dipamerkan." }, { id: "A2", soalan: "Dasar Keselamatan & Kesihatan Pekerjaan difahami." }, { id: "A3", soalan: "Carta Organisasi Jawatankuasa Keselamatan dan Kesihatan (JKK) disediakan." } ] },
             B: { tajuk: "B. Kawalan Hazard Fizikal", item: [ { id: "B1", soalan: "Lantai tidak licin, rata dan tiada hazard yang boleh mengundang kejadian jatuh atau near miss." }, { id: "B2", soalan: "Permukaan siling dalam keadaan baik dan selamat." }, { id: "B3", soalan: "Ruangan umum kerja berkeadaan kemas, tidak bersepah dan bebas dari habuk." }, { id: "B4", soalan: "Susun atur peralatan berkeadaan baik, contohnya tiada over stacking terutamanya di atas almari simpanan." }, { id: "B5", soalan: "Pendawaian elektrik berkeadaan baik, tidak berselirat dan tiada wayar yang pecah atau rosak." }, { id: "B6", soalan: "Stor penyimpanan peralatan tersusun rapi, berkeadaan kemas, dan tiada halangan di pintu keluar." }, { id: "B7", soalan: "Pencahayaan lokasi tempat kerja terang dan cahaya mencukupi (tiada lampu yang rosak)." }, { id: "B8", soalan: "Pengudaraan lokasi tempat kerja berkeadaan baik." }, { id: "B9", soalan: "Suhu di persekitaran tempat kerja memuaskan. Tidak terlalu sejuk dan tidak terlalu panas." }, { id: "B10", soalan: "Tiada bunyi bising di persekitaran tempat kerja yang mengganggu tumpuan anggota." } ] },
@@ -109,41 +109,42 @@
         ];
 
         // --- DATA SOALAN KHUSUS (MAKMAL & RADIOLOGI) ---
+        // Penambahan ciri disable1: true untuk soalan kritikal (Wajaran 3) yang wajib 0 atau 2
         const soalanMakmal = {
             A: { tajuk: "A. REKABENTUK DAN SUSUN ATUR MAKMAL", item: [
                 { id: "M_A1", soalan: "Pergerakan mudah dan selesa semasa waktu bekerja dan kecemasan.", w: 2 },
                 { id: "M_A2", soalan: "Pencahayaan- mematuhi julat pencahayaan", w: 2 },
                 { id: "M_A3", soalan: "Suhu Bilik- mematuhi julat suhu", w: 2 },
-                { id: "M_A4", soalan: "Penilaian IAQ dilaksanakan (Indoor Air Quality)", w: 3 }
+                { id: "M_A4", soalan: "Penilaian IAQ dilaksanakan (Indoor Air Quality)", w: 3, disable1: true }
             ]},
             B: { tajuk: "B. KAWASAN MAKMAL KESELURUHAN", item: [
                 { id: "M_B1a", soalan: "Housekeeping makmal - mengikut jadual", w: 2 },
                 { id: "M_B1b", soalan: "Housekeeping makmal - bersih dan kemas", w: 2 },
-                { id: "M_B2", soalan: "Terdapat tanda amaran kimia dan biologi", w: 3 },
+                { id: "M_B2", soalan: "Terdapat tanda amaran kimia dan biologi", w: 3, disable1: true },
                 { id: "M_B3", soalan: "Bahan makanan/minuman di makmal", w: 2 }
             ]},
             C: { tajuk: "C. PELAN KECEMASAN", item: [
-                { id: "M_C1", soalan: "Terdapat kemudahan shower dan eye wash.", w: 3 },
-                { id: "M_C2", soalan: "Terdapat chemical spillage kit (tarikh luput, latihan penggunaan, kandungan lengkap)", w: 3 }
+                { id: "M_C1", soalan: "Terdapat kemudahan shower dan eye wash.", w: 3, disable1: true },
+                { id: "M_C2", soalan: "Terdapat chemical spillage kit (tarikh luput, latihan penggunaan, kandungan lengkap)", w: 3, disable1: true }
             ]},
             D: { tajuk: "D. PENGGUNAAN BAHAN KIMIA", item: [
-                { id: "M_D1", soalan: "Terdapat SOP bagi pengurusan bahan kimia", w: 3 },
-                { id: "M_D2", soalan: "Chemical registry disediakan", w: 3 },
-                { id: "M_D3", soalan: "MSDS/CSDS bagi semua bahan kimia disediakan", w: 3 },
-                { id: "M_D4", soalan: "Chemical Health Risk Assessment (CHRA) sekurang-kurangnya sekali setiap 5 tahun", w: 3 },
-                { id: "M_D5", soalan: "Latihan penggunaan bahan kimia yang selamat", w: 3 },
-                { id: "M_D6", soalan: "Semua prosedur yang melibatkan agen biologi menggunakan biosafety cabinet", w: 3 },
-                { id: "M_D7", soalan: "Semua prosedur yang melibatkan agen bahan kimia yang berbahaya dan meruap menggunakan kebuk wasap (fume hood)", w: 3 },
-                { id: "M_D8", soalan: "Sistem pelupusan sisa kimia berjadual didokumentasikan", w: 3 },
-                { id: "M_D9", soalan: "Bekas bahan kimia dilabel mengikut peraturan CPL", w: 3 },
-                { id: "M_D10", soalan: "Kebuk wasap dan Biosafety cabinet diperiksa secara berkala oleh pegawai yang kompeten", w: 3 }
+                { id: "M_D1", soalan: "Terdapat SOP bagi pengurusan bahan kimia", w: 3, disable1: true },
+                { id: "M_D2", soalan: "Chemical registry disediakan", w: 3, disable1: true },
+                { id: "M_D3", soalan: "MSDS/CSDS bagi semua bahan kimia disediakan", w: 3, disable1: true },
+                { id: "M_D4", soalan: "Chemical Health Risk Assessment (CHRA) sekurang-kurangnya sekali setiap 5 tahun", w: 3, disable1: true },
+                { id: "M_D5", soalan: "Latihan penggunaan bahan kimia yang selamat", w: 3, disable1: true },
+                { id: "M_D6", soalan: "Semua prosedur yang melibatkan agen biologi menggunakan biosafety cabinet", w: 3, disable1: true },
+                { id: "M_D7", soalan: "Semua prosedur yang melibatkan agen bahan kimia yang berbahaya dan meruap menggunakan kebuk wasap (fume hood)", w: 3, disable1: true },
+                { id: "M_D8", soalan: "Sistem pelupusan sisa kimia berjadual didokumentasikan", w: 3, disable1: true },
+                { id: "M_D9", soalan: "Bekas bahan kimia dilabel mengikut peraturan CPL", w: 3, disable1: true },
+                { id: "M_D10", soalan: "Kebuk wasap dan Biosafety cabinet diperiksa secara berkala oleh pegawai yang kompeten", w: 3, disable1: true }
             ]},
             E: { tajuk: "E. PENYIMPANAN BAHAN KIMIA", item: [
-                { id: "M_E1", soalan: "Bahan kimia disimpan di tempat yang sesuai dan selamat.", w: 3 },
-                { id: "M_E2", soalan: "Tempat penyimpanan dan penstoran bahan kimia yang mencukupi.", w: 3 }
+                { id: "M_E1", soalan: "Bahan kimia disimpan di tempat yang sesuai dan selamat.", w: 3, disable1: true },
+                { id: "M_E2", soalan: "Tempat penyimpanan dan penstoran bahan kimia yang mencukupi.", w: 3, disable1: true }
             ]},
             F: { tajuk: "F. ALAT PERLINDUNGAN DIRI (PPE)", item: [
-                { id: "M_F1", soalan: "Pekerja dibekalkan dengan Alat Perlindungan Diri (PPE) yang sesuai", w: 3 },
+                { id: "M_F1", soalan: "Pekerja dibekalkan dengan Alat Perlindungan Diri (PPE) yang sesuai", w: 3, disable1: true },
                 { id: "M_F2", soalan: "Latihan diberikan", w: 2 },
                 { id: "M_F3", soalan: "Rekod dan penyelenggaraan PPE", w: 2 }
             ]},
@@ -167,50 +168,50 @@
 
         const soalanRadiologi = {
             A: { tajuk: "A. PENGURUSAN", item: [
-                { id: "R_A1", soalan: "Buku Akta Perlesenan Tenaga Atom 1984 (Akta 304) Peraturan-peraturan Perlindungan Sinaran", w: 3 },
-                { id: "R_A2", soalan: "Polisi Perlindungan Sinaran (Basic Safety Standards) dipamer dan ditandatangani", w: 3 },
-                { id: "R_A3i", soalan: "Rekod Pemeriksaan Perubatan (LPTA/BM/5) Seksyen A", w: 3 },
-                { id: "R_A3ii", soalan: "Rekod dedahan dos (bulanan)", w: 3 },
-                { id: "R_A3iii", soalan: "Performance and safety report (QC)", w: 3 },
-                { id: "R_A3iv", soalan: "Rekod-rekod penyelenggaran (PPM dan kerosakan)", w: 3 },
-                { id: "R_A3v", soalan: "Rekod-rekod latihan", w: 3 }
+                { id: "R_A1", soalan: "Buku Akta Perlesenan Tenaga Atom 1984 (Akta 304) Peraturan-peraturan Perlindungan Sinaran", w: 3, disable1: true },
+                { id: "R_A2", soalan: "Polisi Perlindungan Sinaran (Basic Safety Standards) dipamer dan ditandatangani", w: 3, disable1: true },
+                { id: "R_A3i", soalan: "Rekod Pemeriksaan Perubatan (LPTA/BM/5) Seksyen A", w: 3, disable1: true },
+                { id: "R_A3ii", soalan: "Rekod dedahan dos (bulanan)", w: 3, disable1: true },
+                { id: "R_A3iii", soalan: "Performance and safety report (QC)", w: 3, disable1: true },
+                { id: "R_A3iv", soalan: "Rekod-rekod penyelenggaran (PPM dan kerosakan)", w: 3, disable1: true },
+                { id: "R_A3v", soalan: "Rekod-rekod latihan", w: 3, disable1: true }
             ]},
             B: { tajuk: "B. KAWASAN TEMPAT KERJA", item: [
-                { id: "R_B1", soalan: "Simbol sinaran dipamer di setiap bilik X-ray", w: 3 },
-                { id: "R_B2", soalan: "Lampu amaran X-ray berfungsi", w: 3 },
-                { id: "R_B3", soalan: "Terdapat papan tanda amaran 'Do not enter when the light is on'", w: 3 },
-                { id: "R_B4", soalan: "Peringatan tentang pengakuan mengandung diletakkan di luar bilik X-ray", w: 3 },
+                { id: "R_B1", soalan: "Simbol sinaran dipamer di setiap bilik X-ray", w: 3, disable1: true },
+                { id: "R_B2", soalan: "Lampu amaran X-ray berfungsi", w: 3, disable1: true },
+                { id: "R_B3", soalan: "Terdapat papan tanda amaran 'Do not enter when the light is on'", w: 3, disable1: true },
+                { id: "R_B4", soalan: "Peringatan tentang pengakuan mengandung diletakkan di luar bilik X-ray", w: 3, disable1: true },
                 { id: "R_B5", soalan: "Bagi mesin X-ray mudah alih, jarak selamat di antara pesakit bersebelahan adalah 2 meter", w: 2 },
                 { id: "R_B6", soalan: "Pencahayaan yang cukup (kecuali bilik gelap)", w: 2 },
                 { id: "R_B7", soalan: "Kawasan yang menempatkan 'Film Processor' tidak mempunyai bau bahan kimia", w: 2 },
                 { id: "R_B8a", soalan: "Pengkelasan Kawasan kerja: Kawasan Kawalan (Bilik X-ray)", w: 2 },
                 { id: "R_B8b", soalan: "Pengkelasan Kawasan kerja: Kawasan Seliaan (Console Panel)", w: 2 },
                 { id: "R_B8c", soalan: "Pengkelasan Kawasan kerja: Kawasan Bersih (Corridor dan lain-lain)", w: 2 },
-                { id: "R_B9", soalan: "Kawasan bilik gelap (chemical registry, CSDS, pengedalian bahan kimia, penstoran, dll)", w: 3 }
+                { id: "R_B9", soalan: "Kawasan bilik gelap (chemical registry, CSDS, pengedalian bahan kimia, penstoran, dll)", w: 3, disable1: true }
             ]},
             C: { tajuk: "C. PELAN KECEMASAN", item: [
                 { id: "R_C1", soalan: "Laluan dan tangga kecemasan tidak terhalang", w: 2 },
-                { id: "R_C2", soalan: "Alat pemadam api bersesuaian dengan hazad", w: 3 },
-                { id: "R_C3", soalan: "Alat pemadam api diletakkan di tempat yang mudah dicapai dan bersesuaian.", w: 3 }
+                { id: "R_C2", soalan: "Alat pemadam api bersesuaian dengan hazad", w: 3, disable1: true },
+                { id: "R_C3", soalan: "Alat pemadam api diletakkan di tempat yang mudah dicapai dan bersesuaian.", w: 3, disable1: true }
             ]},
             D: { tajuk: "D. KEMALANGAN DI TEMPAT KERJA", item: [
-                { id: "R_D1", soalan: "Notifikasi/ Buku Laporan/Penyiasatan Kemalangan", w: 3 }
+                { id: "R_D1", soalan: "Notifikasi/ Buku Laporan/Penyiasatan Kemalangan", w: 3, disable1: true }
             ]},
             E: { tajuk: "E. PROGRAM PERLINDUNGAN SINARAN KESELAMATAN", item: [
-                { id: "R_E1i", soalan: "Pekerja sinaran memakai alat pemonitoran dos personel", w: 3 },
-                { id: "R_E1ii", soalan: "Majikan memantau dedahan dos sinaran kepada pekerja.", w: 3 },
-                { id: "R_E1iii", soalan: "Keputusan pemonitoran kakitangan pekerja sinaran dimaklumkan", w: 3 },
-                { id: "R_E1iv", soalan: "Jika dos pendedahan melebihi 20mSv, tindakan 'Medical Removal' diambil", w: 3 },
-                { id: "R_E2a", soalan: "Pemeriksaan perubatan: Pra pekerjaan", w: 3 },
-                { id: "R_E2b", soalan: "Pemeriksaan perubatan: Berkala", w: 3 },
-                { id: "R_E2c", soalan: "Pemeriksaan perubatan: Berhenti/Bersara", w: 3 },
-                { id: "R_E3", soalan: "Permonitoran Persekitaran", w: 3 }
+                { id: "R_E1i", soalan: "Pekerja sinaran memakai alat pemonitoran dos personel", w: 3, disable1: true },
+                { id: "R_E1ii", soalan: "Majikan memantau dedahan dos sinaran kepada pekerja.", w: 3, disable1: true },
+                { id: "R_E1iii", soalan: "Keputusan pemonitoran kakitangan pekerja sinaran dimaklumkan", w: 3, disable1: true },
+                { id: "R_E1iv", soalan: "Jika dos pendedahan melebihi 20mSv, tindakan 'Medical Removal' diambil", w: 3, disable1: true },
+                { id: "R_E2a", soalan: "Pemeriksaan perubatan: Pra pekerjaan", w: 3, disable1: true },
+                { id: "R_E2b", soalan: "Pemeriksaan perubatan: Berkala", w: 3, disable1: true },
+                { id: "R_E2c", soalan: "Pemeriksaan perubatan: Berhenti/Bersara", w: 3, disable1: true },
+                { id: "R_E3", soalan: "Permonitoran Persekitaran", w: 3, disable1: true }
             ]},
             F: { tajuk: "F. ALAT PERLINDUNGAN DIRI (PPE)", item: [
                 { id: "R_F1", soalan: "Amalan kawalan infeksi- ikut polisi, panduan, SOP kawalan infeksi", w: 2 },
-                { id: "R_F2a", soalan: "Pekerja dibekalkan dengan PPE yang sesuai (Lead Gown, dll)", w: 3 },
-                { id: "R_F2b", soalan: "Latihan PPE diberikan", w: 3 },
-                { id: "R_F2c", soalan: "Rekod dan penyelenggaraan PPE", w: 3 }
+                { id: "R_F2a", soalan: "Pekerja dibekalkan dengan PPE yang sesuai (Lead Gown, dll)", w: 3, disable1: true },
+                { id: "R_F2b", soalan: "Latihan PPE diberikan", w: 3, disable1: true },
+                { id: "R_F2c", soalan: "Rekod dan penyelenggaraan PPE", w: 3, disable1: true }
             ]},
             G: { tajuk: "G. ERGONOMIK DI TEMPAT KERJA", item: [
                 { id: "R_G1", soalan: "Kemudahan untuk mengangkat atau mengalih pesakit ada disediakan", w: 2 },
@@ -233,7 +234,6 @@
             const [jenisAudit, setJenisAudit] = useState('standard'); 
             const [auditorsList, setAuditorsList] = useState([]);
 
-            // State Jawapan
             const [jawapanSemak, setJawapanSemak] = useState({}); 
             const [jawapanKebakaran, setJawapanKebakaran] = useState({}); 
             const [jawapanKhusus, setJawapanKhusus] = useState({}); 
@@ -329,7 +329,6 @@
                 return senaraiFasiliti;
             };
 
-            // Pengiraan Standard WPI
             const calculationsWpi = useMemo(() => {
                 let ya = 0, tidak = 0, tb = 0;
                 Object.keys(jawapanSemak).forEach(key => {
@@ -354,7 +353,6 @@
                 return count;
             }, [jawapanKebakaran]);
 
-            // Pengiraan Khusus (Makmal/Radiologi) Skala (0,1,2) * Wajaran
             const calculationsKhusus = useMemo(() => {
                 let totalMax = 0, totalObtained = 0, answered = 0, totalQuestions = 0;
                 const targetSoalan = jenisAudit === 'makmal' ? soalanMakmal : soalanRadiologi;
@@ -506,11 +504,18 @@
                             });
                         });
 
-                        let sumText = isMakmal ? "(A+B+C+D+E+F+G+H+I+J)" : "(A+B+C+D+E+F+G+H)";
+                        // Menambah ringkasan akhir dalam format jadual / di bawah jadual
+                        let sumText = isMakmal ? "JUMLAH KESELURUHAN (A+B+C+D+E+F+G+H+I+J)" : "JUMLAH KESELURUHAN (A+B+C+D+E+F+G+H)";
+                        let markahHeader = isMakmal ? "10. MARKAH KESELURUHAN" : "7. MARKAH KESELURUHAN";
+
                         tableBodyKhusus.push([
-                            { content: `JUMLAH KESELURUHAN ${sumText}`, colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } },
+                            { content: sumText, colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } },
                             { content: `${calculationsKhusus.totalObtained}`, styles: { fontStyle: 'bold', halign: 'center', fontSize: 11 } },
                             { content: '', styles: { fillColor: [255,255,255] } }
+                        ]);
+
+                        tableBodyKhusus.push([
+                            { content: `${markahHeader}\nMarkah keseluruhan = ${calculationsKhusus.totalObtained}`, colSpan: 6, styles: { fontStyle: 'bold', halign: 'left' } }
                         ]);
 
                         docKhusus.autoTable({
@@ -719,16 +724,30 @@
                                                     <span className="block mt-1 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded w-max">Wajaran: {item.w}</span>
                                                 </td>
                                                 <td className="px-2 py-4 text-center align-top bg-red-50/20">
-                                                    <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer"><input type="radio" name={item.id} value="0" checked={jawapanKhusus[item.id] === '0'} onChange={() => handleRadioChange(item.id, '0', true)} className="w-5 h-5 text-red-500 focus:ring-red-500 border-gray-300"/></label>
+                                                    <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer">
+                                                        <input type="radio" name={item.id} value="0" checked={jawapanKhusus[item.id] === '0'} onChange={() => handleRadioChange(item.id, '0', true)} className="w-5 h-5 text-red-500 focus:ring-red-500 border-gray-300"/>
+                                                    </label>
                                                 </td>
                                                 <td className="px-2 py-4 text-center align-top bg-yellow-50/20">
-                                                    <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer"><input type="radio" name={item.id} value="1" checked={jawapanKhusus[item.id] === '1'} onChange={() => handleRadioChange(item.id, '1', true)} className="w-5 h-5 text-yellow-500 focus:ring-yellow-500 border-gray-300"/></label>
+                                                    {item.disable1 ? (
+                                                        <div className="flex justify-center items-center w-full min-h-[48px] bg-slate-200/50 cursor-not-allowed text-slate-400 text-xs rounded font-bold" title="Tidak berkenaan untuk soalan ini">
+                                                            X
+                                                        </div>
+                                                    ) : (
+                                                        <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer">
+                                                            <input type="radio" name={item.id} value="1" checked={jawapanKhusus[item.id] === '1'} onChange={() => handleRadioChange(item.id, '1', true)} className="w-5 h-5 text-yellow-500 focus:ring-yellow-500 border-gray-300"/>
+                                                        </label>
+                                                    )}
                                                 </td>
                                                 <td className="px-2 py-4 text-center align-top bg-green-50/20">
-                                                    <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer"><input type="radio" name={item.id} value="2" checked={jawapanKhusus[item.id] === '2'} onChange={() => handleRadioChange(item.id, '2', true)} className="w-5 h-5 text-green-500 focus:ring-green-500 border-gray-300"/></label>
+                                                    <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer">
+                                                        <input type="radio" name={item.id} value="2" checked={jawapanKhusus[item.id] === '2'} onChange={() => handleRadioChange(item.id, '2', true)} className="w-5 h-5 text-green-500 focus:ring-green-500 border-gray-300"/>
+                                                    </label>
                                                 </td>
                                                 <td className="px-2 py-4 text-center align-top">
-                                                    <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer"><input type="radio" name={item.id} value="tb" checked={jawapanKhusus[item.id] === 'tb'} onChange={() => handleRadioChange(item.id, 'tb', true)} className="w-5 h-5 text-slate-500 focus:ring-slate-500 border-gray-300"/></label>
+                                                    <label className="flex justify-center items-center w-full min-h-[48px] cursor-pointer">
+                                                        <input type="radio" name={item.id} value="tb" checked={jawapanKhusus[item.id] === 'tb'} onChange={() => handleRadioChange(item.id, 'tb', true)} className="w-5 h-5 text-slate-500 focus:ring-slate-500 border-gray-300"/>
+                                                    </label>
                                                 </td>
                                                 <td className="px-4 py-4 align-top">
                                                     <textarea rows="2" value={jawapanKhusus[`${item.id}_ulasan`] || ''} onChange={(e) => setJawapanKhusus({...jawapanKhusus, [`${item.id}_ulasan`]: e.target.value})} placeholder="Ulasan" className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 p-2 text-sm border bg-white resize-none" />
