@@ -143,6 +143,7 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgDs_S0w64guEKS3R3Dih09SC2QvirtpxHgx440OID1I3VAF-Vs-zbMATq-XmlnvKR4Q/exec";
 
         const App = () => {
+            // SEMUA HOOKS DILETAKKAN DI BAHAGIAN ATAS
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [passcode, setPasscode] = useState('');
             const [activeTab, setActiveTab] = useState('maklumat');
@@ -159,41 +160,31 @@
             const [savedSection, setSavedSection] = useState(null);
             const [isGenerating, setIsGenerating] = useState(false);
 
-            if (!isLoggedIn) {
-                return (
-                    <div className="flex items-center justify-center h-screen bg-slate-900 px-4">
-                        <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center animate-[fadeIn_0.5s_ease-out]">
-                            <Icons.Lock />
-                            <h2 className="text-2xl font-bold text-slate-800 mb-2">Akses Terhad</h2>
-                            <p className="text-sm text-slate-500 mb-6">Sistem ini dikhususkan untuk warga kerja dan auditor HTM sahaja.</p>
-                            <input 
-                                type="password" 
-                                value={passcode} 
-                                onChange={e => setPasscode(e.target.value)} 
-                                className="w-full border-2 border-slate-200 p-4 rounded-xl mb-4 text-center font-bold tracking-widest text-xl focus:border-indigo-500 outline-none transition-colors" 
-                                placeholder="KATA LALUAN" 
-                                onKeyDown={e => {
-                                    if(e.key === 'Enter') {
-                                        if(passcode === 'AUDITHTM') setIsLoggedIn(true);
-                                        else alert('Kata laluan tidak sah!');
-                                    }
-                                }}
-                            />
-                            <button 
-                                onClick={() => { 
-                                    if(passcode === 'AUDITHTM') setIsLoggedIn(true); 
-                                    else alert('Kata laluan tidak sah!'); 
-                                }} 
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
-                            >
-                                Log Masuk Sistem
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
+            const answeredKebakaran = useMemo(() => {
+                let count = 0;
+                senaraiSoalanKebakaran.forEach(q => {
+                    const val = jawapanKebakaran[q.id];
+                    if(q.type === 'checkbox') { if(val && val.length > 0) count++; } 
+                    else { if(val && val.trim() !== '') count++; }
+                });
+                return count;
+            }, [jawapanKebakaran]);
 
-            // --- FUNGSI SCROLL AUTOMATIK ---
+            const calculations = useMemo(() => {
+                let ya = 0, tidak = 0, tb = 0;
+                Object.keys(jawapanSemak).forEach(key => {
+                    if (!key.includes('_ulasan') && !key.includes('_gambar')) {
+                        const val = jawapanSemak[key];
+                        if(val === '1') ya++; else if(val === '0') tidak++; else if(val === 'tb') tb++;
+                    }
+                });
+                const answered = ya + tidak + tb;
+                const denominator = totalSoalan - tb;
+                const peratus = denominator > 0 ? ((ya / denominator) * 100).toFixed(2) : 0;
+                return { ya, tidak, tb, answered, denominator, peratus };
+            }, [jawapanSemak, totalSoalan]);
+
+            // FUNGSI SCROLL AUTOMATIK
             const handleTabChange = (id) => {
                 setActiveTab(id);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -274,30 +265,6 @@
                     });
                 }
             };
-
-            const answeredKebakaran = useMemo(() => {
-                let count = 0;
-                senaraiSoalanKebakaran.forEach(q => {
-                    const val = jawapanKebakaran[q.id];
-                    if(q.type === 'checkbox') { if(val && val.length > 0) count++; } 
-                    else { if(val && val.trim() !== '') count++; }
-                });
-                return count;
-            }, [jawapanKebakaran]);
-
-            const calculations = useMemo(() => {
-                let ya = 0, tidak = 0, tb = 0;
-                Object.keys(jawapanSemak).forEach(key => {
-                    if (!key.includes('_ulasan') && !key.includes('_gambar')) {
-                        const val = jawapanSemak[key];
-                        if(val === '1') ya++; else if(val === '0') tidak++; else if(val === 'tb') tb++;
-                    }
-                });
-                const answered = ya + tidak + tb;
-                const denominator = totalSoalan - tb;
-                const peratus = denominator > 0 ? ((ya / denominator) * 100).toFixed(2) : 0;
-                return { ya, tidak, tb, answered, denominator, peratus };
-            }, [jawapanSemak, totalSoalan]);
 
             const handleSimpanBahagian = (secKey) => { setSavedSection(secKey); setTimeout(() => setSavedSection(null), 3000); };
 
@@ -496,6 +463,42 @@
                 </button>
             );
 
+            // SKRIN LOG MASUK
+            if (!isLoggedIn) {
+                return (
+                    <div className="flex items-center justify-center h-screen bg-slate-900 px-4">
+                        <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center animate-[fadeIn_0.5s_ease-out]">
+                            <Icons.Lock />
+                            <h2 className="text-2xl font-bold text-slate-800 mb-2">Akses Terhad</h2>
+                            <p className="text-sm text-slate-500 mb-6">Sistem ini dikhususkan untuk warga kerja dan auditor HTM sahaja.</p>
+                            <input 
+                                type="password" 
+                                value={passcode} 
+                                onChange={e => setPasscode(e.target.value)} 
+                                className="w-full border-2 border-slate-200 p-4 rounded-xl mb-4 text-center font-bold tracking-widest text-xl focus:border-indigo-500 outline-none transition-colors" 
+                                placeholder="KATA LALUAN" 
+                                onKeyDown={e => {
+                                    if(e.key === 'Enter') {
+                                        if(passcode === 'AUDITHTM') setIsLoggedIn(true);
+                                        else alert('Kata laluan tidak sah!');
+                                    }
+                                }}
+                            />
+                            <button 
+                                onClick={() => { 
+                                    if(passcode === 'AUDITHTM') setIsLoggedIn(true); 
+                                    else alert('Kata laluan tidak sah!'); 
+                                }} 
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+                            >
+                                Log Masuk Sistem
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // SKRIN UTAMA APLIKASI
             return (
                 <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-slate-50 relative">
                     <div className="w-full md:w-72 bg-slate-900 text-white shadow-xl flex flex-col z-20 shrink-0">
@@ -706,7 +709,7 @@
                             <div className="bg-white p-8 rounded-2xl text-center">
                                 <Icons.CheckCircle />
                                 <h3 className="text-2xl font-bold mt-4 mb-2">Laporan Selesai</h3>
-                                <p className="mb-6">PDF dijana dan data berjaya dimasukkan ke Google Sheet.</p>
+                                <p className="mb-6">PDF dijana dan data berjaya dimasukkan ke Google Sheet (Termasuk link gambar).</p>
                                 <button onClick={() => setShowSuccessModal(false)} className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">Tutup Selesai</button>
                             </div>
                         </div>
