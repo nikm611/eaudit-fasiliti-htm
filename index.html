@@ -687,50 +687,55 @@
                     const pdfFireBase64 = docFire.output('datauristring').split(',')[1];
 
                     const namaAuditors = auditorsList.map(a => `${a.nama} (${a.jawatan})`).join(", ");
+                    const masaRekod = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Kuala_Lumpur' });
 
                     let rowKkp = [
-                        formatDate(maklumat.tarikh), maklumat.lokasi, namaAuditors,
-                        calculations.ya, calculations.tidak, calculations.tb, calculations.peratus + '%',
-                        ulasan, pengesah, formatDate(tarikhPengesahan)
+                        masaRekod, maklumat.lokasi, formatDate(maklumat.tarikh), namaAuditors, pengesah, calculations.peratus + '%'
                     ];
                     
                     Object.keys(soalanSenaraiSemak).forEach(secKey => {
                         soalanSenaraiSemak[secKey].item.forEach(item => {
-                            rowKkp.push(jawapanSemak[item.id] || ''); 
-                            let combinedUlasan = jawapanSemak[`${item.id}_ulasan`] || '';
+                            let ansCode = jawapanSemak[item.id];
+                            let ansText = ansCode === '1' ? 'Ya' : (ansCode === '0' ? 'Tidak' : (ansCode === 'tb' ? 'TB' : 'Tiada Jawapan'));
                             
-                            // Susunan lampiran log ke Excel (jika ada banyak gambar)
+                            let cellText = `Jawapan: ${ansText}`;
+                            if (jawapanSemak[`${item.id}_ulasan`]) {
+                                cellText += `\nUlasan: ${jawapanSemak[`${item.id}_ulasan`]}`;
+                            }
+                            
                             if (jawapanSemak[`${item.id}_gambar`] && jawapanSemak[`${item.id}_gambar`].length > 0) {
                                 let imgLinks = jawapanSemak[`${item.id}_gambar`].map((b64, idx) => {
                                     let shortB64 = b64.length > 45000 ? b64.substring(0, 45000) + "...[GAMBAR]" : b64;
                                     return `[GAMBAR ${idx + 1}:\n${shortB64}]`;
                                 }).join('\n\n');
-                                combinedUlasan += '\n\n' + imgLinks;
+                                cellText += '\n\n' + imgLinks;
                             }
-                            rowKkp.push(combinedUlasan); 
+                            rowKkp.push(cellText); 
                         });
                     });
 
                     let rowKebakaran = [
-                        formatDate(maklumat.tarikh), maklumat.lokasi, namaAuditors, pengesah, formatDate(tarikhPengesahan)
+                        masaRekod, maklumat.lokasi, formatDate(maklumat.tarikh), namaAuditors, pengesah
                     ];
                     
                     senaraiSoalanKebakaran.forEach(q => {
                         let val = jawapanKebakaran[q.id];
-                        let valStr = Array.isArray(val) ? val.join(", ") : (val || "");
-                        rowKebakaran.push(valStr); 
+                        let valStr = Array.isArray(val) ? val.join(", ") : (val || "Tiada Jawapan");
+                        if(q.type === 'date' && valStr && valStr !== "Tiada Jawapan") valStr = formatDate(valStr);
                         
-                        let combinedCatatan = jawapanKebakaran[`${q.id}_other`] || '';
+                        let cellText = `Jawapan: ${valStr}`;
+                        if (jawapanKebakaran[`${q.id}_other`]) {
+                            cellText += `\nUlasan: ${jawapanKebakaran[`${q.id}_other`]}`;
+                        }
                         
-                        // Susunan lampiran log ke Excel 
                         if (jawapanKebakaran[`${q.id}_gambar`] && jawapanKebakaran[`${q.id}_gambar`].length > 0) {
                             let imgLinks = jawapanKebakaran[`${q.id}_gambar`].map((b64, idx) => {
                                 let shortB64 = b64.length > 45000 ? b64.substring(0, 45000) + "...[GAMBAR]" : b64;
                                 return `[GAMBAR ${idx + 1}:\n${shortB64}]`;
                             }).join('\n\n');
-                            combinedCatatan += '\n\n' + imgLinks;
+                            cellText += '\n\n' + imgLinks;
                         }
-                        rowKebakaran.push(combinedCatatan); 
+                        rowKebakaran.push(cellText); 
                     });
 
                     const payload = {
